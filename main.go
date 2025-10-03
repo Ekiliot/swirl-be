@@ -65,7 +65,7 @@ func main() {
 
 	// Настройка CORS
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"}, // В продакшене указать конкретные домены
+		AllowOrigins:     []string{"*", "null"}, // Разрешаем file:// и все домены
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"*"},
 		ExposeHeaders:    []string{"Content-Length"},
