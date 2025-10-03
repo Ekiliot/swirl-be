@@ -11,11 +11,19 @@ type Config struct {
 }
 
 func Load() *Config {
-	return &Config{
+	config := &Config{
 		DatabaseURL: getEnv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/railway?sslmode=disable"),
 		JWTSecret:   getEnv("JWT_SECRET", "your-super-secret-jwt-key-change-in-production"),
 		Port:        getEnv("PORT", "8080"),
 	}
+	
+	// Отладочная информация
+	println("🔍 Config loaded:")
+	println("DATABASE_URL:", config.DatabaseURL)
+	println("JWT_SECRET:", config.JWTSecret[:10]+"...")
+	println("PORT:", config.Port)
+	
+	return config
 }
 
 func getEnv(key, defaultValue string) string {
