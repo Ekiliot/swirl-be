@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #messages { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; }
+        .message { margin: 5px 0; padding: 5px; background: #f0f0f0; }
+        .error { color: red; }
+        .success { color: green; }
+        input, button { margin: 5px; padding: 5px; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Test для Chatroulette Backend</h1>
+    
+    <div>
+        <h3>1. Регистрация и авторизация:</h3>
+        <div style="margin: 10px 0;">
+            <input type="text" id="username-input" placeholder="Username (3-20 символов)" style="width: 200px;">
+            <input type="password" id="password-input" placeholder="Password (минимум 6 символов)" style="width: 200px;">
+            <button onclick="registerUser()">Регистрация</button>
+            <button onclick="loginUser()">Войти</button>
+        </div>
+        <div style="font-size: 12px; color: #666; margin: 5px 0;">
+            💡 Попробуйте зарегистрировать нового пользователя или войти как testuser
+        </div>
+        <div style="margin: 10px 0;">
+            <button onclick="getToken()">Получить токен (testuser)</button>
+            <button onclick="createChat()">Создать чат</button>
+            <button onclick="findRandomUser()">Найти случайного пользователя</button>
+        </div>
+        <div id="token-info"></div>
+    </div>
+    
+    <div>
+        <h3>2. Подключение к WebSocket:</h3>
+        <input type="text" id="token-input" placeholder="JWT Token" style="width: 300px;">
+        <input type="text" id="chat-id-input" placeholder="Chat ID" style="width: 300px;">
+        <button onclick="connectWebSocket()">Подключиться к WebSocket</button>
+        <button onclick="disconnectWebSocket()">Отключиться</button>
+    </div>
+    
+    <div>
+        <h3>3. Отправка сообщения:</h3>
+        <input type="text" id="message-input" placeholder="Введите сообщение" style="width: 300px;">
+        <button onclick="sendMessage()">Отправить сообщение</button>
+    </div>
+    
+    <div>
+        <h3>Сообщения:</h3>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentToken = '';
+        let currentChatId = '';
+
+        async function registerUser() {
+            const username = document.getElementById('username-input').value;
+            const password = document.getElementById('password-input').value;
+            
+            if (!username || !password) {
+                alert('Введите username и password!');
+                return;
+            }
+            
+            if (username.length < 3) {
+                document.getElementById('token-info').innerHTML = '<p class="error">Username должен содержать минимум 3 символа!</p>';
+                return;
+            }
+            
+            if (username.length > 20) {
+                document.getElementById('token-info').innerHTML = '<p class="error">Username не должен превышать 20 символов!</p>';
+                return;
+            }
+            
+            if (password.length < 6) {
+                document.getElementById('token-info').innerHTML = '<p class="error">Пароль должен содержать минимум 6 символов!</p>';
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, password: password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentToken = data.token;
+                    document.getElementById('token-input').value = currentToken;
+                    document.getElementById('token-info').innerHTML = '<p class="success">✅ Пользователь "' + username + '" успешно зарегистрирован! Токен получен.</p>';
+                } else {
+                    const errorData = await response.json();
+                    if (response.status === 409) {
+                        document.getElementById('token-info').innerHTML = '<p class="error">❌ Пользователь с username "' + username + '" уже существует! Выберите другой username.</p>';
+                    } else {
+                        document.getElementById('token-info').innerHTML = '<p class="error">❌ Ошибка регистрации: ' + (errorData.error || 'Неизвестная ошибка') + '</p>';
+                    }
+                }
+            } catch (error) {
+                document.getElementById('token-info').innerHTML = '<p class="error">❌ Ошибка сети: ' + error.message + '</p>';
+            }
+        }
+
+        async function loginUser() {
+            const username = document.getElementById('username-input').value;
+            const password = document.getElementById('password-input').value;
+            
+            if (!username || !password) {
+                alert('Введите username и password!');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, password: password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentToken = data.token;
+                    document.getElementById('token-input').value = currentToken;
+                    document.getElementById('token-info').innerHTML = '<p class="success">✅ Вход выполнен! Добро пожаловать, ' + username + '!</p>';
+                } else {
+                    const errorData = await response.json();
+                    if (response.status === 401) {
+                        document.getElementById('token-info').innerHTML = '<p class="error">❌ Неверный username или пароль! Проверьте данные и попробуйте снова.</p>';
+                    } else {
+                        document.getElementById('token-info').innerHTML = '<p class="error">❌ Ошибка входа: ' + (errorData.error || 'Неизвестная ошибка') + '</p>';
+                    }
+                }
+            } catch (error) {
+                document.getElementById('token-info').innerHTML = '<p class="error">❌ Ошибка сети: ' + error.message + '</p>';
+            }
+        }
+
+        async function getToken() {
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'testuser', password: 'test123' })
+                });
+                const data = await response.json();
+                currentToken = data.token;
+                document.getElementById('token-input').value = currentToken;
+                document.getElementById('token-info').innerHTML = '<p class="success">Токен получен!</p>';
+            } catch (error) {
+                document.getElementById('token-info').innerHTML = '<p class="error">Ошибка получения токена: ' + error.message + '</p>';
+            }
+        }
+
+        async function createChat() {
+            if (!currentToken) {
+                alert('Сначала получите токен!');
+                return;
+            }
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/chats', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentToken
+                    },
+                    body: JSON.stringify({ 
+                        name: 'Test Chat', 
+                        description: 'Test chat for WebSocket',
+                        type: 'private'
+                    })
+                });
+                const data = await response.json();
+                currentChatId = data.id;
+                document.getElementById('chat-id-input').value = currentChatId;
+                document.getElementById('token-info').innerHTML += '<p class="success">Чат создан! ID: ' + currentChatId + '</p>';
+            } catch (error) {
+                document.getElementById('token-info').innerHTML += '<p class="error">Ошибка создания чата: ' + error.message + '</p>';
+            }
+        }
+
+        async function findRandomUser() {
+            if (!currentToken) {
+                alert('Сначала получите токен!');
+                return;
+            }
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/chatroulette/find', {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                const data = await response.json();
+                currentChatId = data.chat_id;
+                document.getElementById('chat-id-input').value = currentChatId;
+                document.getElementById('token-info').innerHTML += '<p class="success">Найден случайный пользователь! Chat ID: ' + currentChatId + '</p>';
+            } catch (error) {
+                document.getElementById('token-info').innerHTML += '<p class="error">Ошибка поиска пользователя: ' + error.message + '</p>';
+            }
+        }
+
+        function connectWebSocket() {
+            const token = document.getElementById('token-input').value;
+            const chatId = document.getElementById('chat-id-input').value;
+            
+            if (!token || !chatId) {
+                alert('Введите токен и chat_id!');
+                return;
+            }
+
+            // WebSocket не поддерживает заголовки авторизации напрямую
+            // Нужно передать токен через query параметр
+            const wsUrl = `ws://localhost:8080/api/v1/ws?chat_id=${chatId}&token=${token}`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function() {
+                console.log('Connected to chat');
+                addMessage('Connected to chat', 'success');
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                console.log('New message:', data);
+                addMessage('Message: ' + JSON.stringify(data, null, 2), 'message');
+            };
+            
+            ws.onclose = function() {
+                console.log('Disconnected from chat');
+                addMessage('Disconnected from chat', 'error');
+            };
+            
+            ws.onerror = function(error) {
+                console.log('WebSocket error:', error);
+                addMessage('WebSocket error: ' + error.message, 'error');
+            };
+        }
+
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function sendMessage() {
+            const message = document.getElementById('message-input').value;
+            if (!message) {
+                alert('Введите сообщение!');
+                return;
+            }
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('WebSocket не подключен!');
+                return;
+            }
+            
+            // Отправляем сообщение через API, а не через WebSocket
+            sendMessageViaAPI(message);
+        }
+
+        async function sendMessageViaAPI(message) {
+            const token = document.getElementById('token-input').value;
+            const chatId = document.getElementById('chat-id-input').value;
+            
+            try {
+                const response = await fetch(`http://localhost:8080/api/v1/chats/${chatId}/messages`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ 
+                        type: 'text',
+                        content: message
+                    })
+                });
+                const data = await response.json();
+                addMessage('Message sent via API: ' + JSON.stringify(data, null, 2), 'success');
+                document.getElementById('message-input').value = '';
+            } catch (error) {
+                addMessage('Error sending message: ' + error.message, 'error');
+            }
+        }
+
+        function addMessage(text, type) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + type;
+            messageDiv.textContent = new Date().toLocaleTimeString() + ': ' + text;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>

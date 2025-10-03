@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swirl App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .app-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 1200px;
+            height: 80vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-info {
+            padding: 20px;
+            background: #667eea;
+            color: white;
+            text-align: center;
+        }
+
+        .user-info h3 {
+            margin-bottom: 5px;
+        }
+
+        .user-info .status {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .auth-section {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .auth-section h4 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .input-group {
+            margin-bottom: 10px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .chat-header h2 {
+            margin-bottom: 5px;
+        }
+
+        .chat-status {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .search-section {
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .search-animation {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message.own {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.own .message-content {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.other .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e9ecef;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-info {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        .message-input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .message-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .send-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .send-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status-message {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+
+        .success {
+            color: #155724;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+
+        .info {
+            color: #0c5460;
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px;
+            font-style: italic;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .typing-indicator.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Боковая панель -->
+        <div class="sidebar">
+            <div class="user-info">
+                <h3 id="current-username">Не авторизован</h3>
+                <div class="status" id="connection-status">Отключен</div>
+            </div>
+
+            <div class="auth-section">
+                <h4>Авторизация</h4>
+                <div class="input-group">
+                    <input type="text" id="username-input" placeholder="Username">
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password-input" placeholder="Password">
+                </div>
+                <button class="btn" onclick="registerUser()">Регистрация</button>
+                <button class="btn btn-success" onclick="loginUser()">Войти</button>
+                <div id="auth-messages"></div>
+            </div>
+
+            <div class="profile-section" id="profile-section" style="display: none;">
+                <h4>Мой профиль</h4>
+                <div class="profile-info">
+                    <div class="profile-photo">
+                        <img id="profile-photo" src="" alt="Фото профиля" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd;">
+                    </div>
+                    <div class="profile-details">
+                        <div><strong>Имя пользователя:</strong> <span id="profile-username"></span></div>
+                        <div><strong>День рождения:</strong> <span id="profile-birthday"></span></div>
+                        <div><strong>Статус:</strong> <span id="profile-status"></span></div>
+                    </div>
+                </div>
+                <div class="privacy-settings">
+                    <h5>Настройки конфиденциальности</h5>
+                    <label><input type="checkbox" id="show-username"> Показывать имя пользователя</label><br>
+                    <label><input type="checkbox" id="show-birthday"> Показывать день рождения</label><br>
+                    <label><input type="checkbox" id="show-online-status"> Показывать статус онлайн</label><br>
+                </div>
+                <button class="btn btn-primary" onclick="saveProfile()">Сохранить профиль</button>
+                <button class="btn" onclick="backToSearch()">Назад к поиску</button>
+            </div>
+
+            <div class="search-section">
+                <h4>Поиск собеседника</h4>
+                <div class="search-animation" id="search-animation"></div>
+                <button class="btn btn-warning" onclick="findRandomUser()" id="find-btn">Найти собеседника</button>
+                <button class="btn btn-danger" onclick="skipUser()" id="skip-btn" style="display: none;">Пропустить</button>
+                <button class="btn btn-success" onclick="saveChat()" id="save-btn" style="display: none;">Сохранить чат</button>
+                <button class="btn" onclick="checkForNewChat()" id="check-btn" style="display: none;">Проверить чаты</button>
+                <button class="btn" onclick="backToSearch()" id="back-btn" style="display: none;">Назад к поиску</button>
+                <button class="btn btn-info" onclick="showProfile()" id="profile-btn">Мой профиль</button>
+                <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                    <div>Людей в очереди: <span id="queue-size">0</span></div>
+                    <div>Статус: <span id="search-status">Не ищет</span></div>
+                </div>
+                <div id="search-messages"></div>
+            </div>
+
+            <div class="search-section" style="border-top: 1px solid #e9ecef; margin-top: 10px;">
+                <div id="personal-chats">
+                    <div style="padding: 10px; color: #666; font-size: 12px;">Загрузка личных чатов...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основная область чата -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <h2 id="chat-title">Swirl</h2>
+                <div class="chat-status" id="chat-status">Войдите в систему для начала общения</div>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="status-message">
+                    <h3>🌪️ Добро пожаловать в Swirl!</h3>
+                    <p>1. Войдите в систему или зарегистрируйтесь</p>
+                    <p>2. Нажмите "Найти собеседника"</p>
+                    <p>3. Начните общение!</p>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typing-indicator">
+                Собеседник печатает...
+            </div>
+
+            <div class="message-input-area">
+                <div class="message-input-container">
+                    <input type="text" id="message-input" class="message-input" placeholder="Введите сообщение..." disabled>
+                    <button class="send-btn" id="send-btn" onclick="sendMessage()" disabled>Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentToken = '';
+        let currentChatId = '';
+        let currentUsername = '';
+        let currentUserID = '';
+        let isConnected = false;
+        let activityInterval = null;
+
+        // Функция для извлечения user_id из JWT токена
+        function getUserIdFromToken(token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.user_id;
+            } catch (error) {
+                console.error('Error parsing token:', error);
+                return null;
+            }
+        }
+
+        // Авторизация
+        async function registerUser() {
+            const username = document.getElementById('username-input').value;
+            const password = document.getElementById('password-input').value;
+            
+            if (!username || !password) {
+                showAuthMessage('Введите username и password!', 'error');
+                return;
+            }
+            
+            if (username.length < 3) {
+                showAuthMessage('Username должен содержать минимум 3 символа!', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showAuthMessage('Пароль должен содержать минимум 6 символов!', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, password: password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentToken = data.token;
+                    currentUsername = username;
+                    currentUserID = getUserIdFromToken(data.token);
+                    updateUserInfo();
+                    showAuthMessage('✅ Пользователь "' + username + '" успешно зарегистрирован!', 'success');
+                } else {
+                    const errorData = await response.json();
+                    if (response.status === 409) {
+                        showAuthMessage('❌ Пользователь с username "' + username + '" уже существует!', 'error');
+                    } else {
+                        showAuthMessage('❌ Ошибка регистрации: ' + (errorData.error || 'Неизвестная ошибка'), 'error');
+                    }
+                }
+            } catch (error) {
+                showAuthMessage('❌ Ошибка сети: ' + error.message, 'error');
+            }
+        }
+
+        async function loginUser() {
+            const username = document.getElementById('username-input').value;
+            const password = document.getElementById('password-input').value;
+            
+            if (!username || !password) {
+                showAuthMessage('Введите username и password!', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, password: password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentToken = data.token;
+                    currentUsername = username;
+                    currentUserID = getUserIdFromToken(data.token);
+                    updateUserInfo();
+                    showAuthMessage('✅ Вход выполнен! Добро пожаловать, ' + username + '!', 'success');
+                } else {
+                    const errorData = await response.json();
+                    if (response.status === 401) {
+                        showAuthMessage('❌ Неверный username или пароль!', 'error');
+                    } else {
+                        showAuthMessage('❌ Ошибка входа: ' + (errorData.error || 'Неизвестная ошибка'), 'error');
+                    }
+                }
+            } catch (error) {
+                showAuthMessage('❌ Ошибка сети: ' + error.message, 'error');
+            }
+        }
+
+        function showAuthMessage(message, type) {
+            const messagesDiv = document.getElementById('auth-messages');
+            messagesDiv.innerHTML = '<div class="' + type + '">' + message + '</div>';
+        }
+
+        function updateUserInfo() {
+            document.getElementById('current-username').textContent = currentUsername;
+            document.getElementById('connection-status').textContent = 'Авторизован';
+            document.getElementById('chat-title').textContent = 'Swirl - ' + currentUsername;
+            document.getElementById('chat-status').textContent = 'Готов к поиску собеседника';
+            updateQueueStatus();
+            loadPersonalChats(); // Загружаем личные чаты
+            
+            // Обновляем статус онлайн
+            updateOnlineStatus(true);
+        }
+
+        // Загрузка личных чатов
+        async function loadPersonalChats() {
+            if (!currentToken) return;
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/chats', {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const chats = data.chats || [];
+                    
+                    // Фильтруем только сохраненные чаты (не временные чатрулетки)
+                    const personalChats = chats.filter(chat => 
+                        chat.type === 'saved' || 
+                        (chat.type === 'private' && !chat.name.includes('Swirl'))
+                    );
+                    
+                    displayPersonalChats(personalChats);
+                }
+            } catch (error) {
+                console.log('Error loading personal chats:', error);
+            }
+        }
+
+        // Отображение личных чатов
+        function displayPersonalChats(chats) {
+            const chatsList = document.getElementById('personal-chats');
+            if (!chatsList) return;
+            
+            if (chats.length === 0) {
+                chatsList.innerHTML = '<div style="padding: 10px; color: #666; font-size: 12px;">Нет сохраненных чатов</div>';
+                return;
+            }
+            
+            let html = '<h4 style="margin-bottom: 10px;">Личные чаты</h4>';
+            chats.forEach(chat => {
+                const participants = chat.participants ? chat.participants.length : 0;
+                html += `
+                    <div class="chat-item" onclick="openPersonalChat('${chat.id}')" style="
+                        padding: 8px; 
+                        margin: 2px 0; 
+                        background: #f0f0f0; 
+                        border-radius: 4px; 
+                        cursor: pointer;
+                        font-size: 12px;
+                    ">
+                        <div style="font-weight: bold;">${chat.name}</div>
+                        <div style="color: #666;">Участников: ${participants}</div>
+                    </div>
+                `;
+            });
+            
+            chatsList.innerHTML = html;
+        }
+
+        // Открытие личного чата
+        function openPersonalChat(chatId) {
+            currentChatId = chatId;
+            document.getElementById('chat-status').textContent = 'Личный чат';
+            document.getElementById('find-btn').style.display = 'none';
+            document.getElementById('skip-btn').style.display = 'none';
+            document.getElementById('save-btn').style.display = 'none';
+            document.getElementById('check-btn').style.display = 'none';
+            document.getElementById('back-btn').style.display = 'inline-block';
+            document.getElementById('message-input').disabled = false;
+            document.getElementById('send-btn').disabled = false;
+            document.getElementById('search-status').textContent = 'В личном чате';
+            stopActivityUpdates();
+            connectWebSocket();
+            loadChatMessages(chatId);
+        }
+
+        // Возврат к поиску
+        function backToSearch() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            
+            currentChatId = '';
+            isConnected = false;
+            
+            document.getElementById('find-btn').style.display = 'inline-block';
+            document.getElementById('skip-btn').style.display = 'none';
+            document.getElementById('save-btn').style.display = 'none';
+            document.getElementById('check-btn').style.display = 'none';
+            document.getElementById('back-btn').style.display = 'none';
+            document.getElementById('message-input').disabled = true;
+            document.getElementById('send-btn').disabled = true;
+            document.getElementById('chat-status').textContent = 'Готов к поиску собеседника';
+            document.getElementById('connection-status').textContent = 'Отключен';
+            document.getElementById('search-status').textContent = 'Не ищет';
+            updateQueueStatus();
+            
+            // Очищаем чат
+            document.getElementById('chat-messages').innerHTML = `
+                <div class="status-message">
+                    <h3>🌪️ Добро пожаловать в Swirl!</h3>
+                    <p>1. Войдите в систему или зарегистрируйтесь</p>
+                    <p>2. Нажмите "Найти собеседника"</p>
+                    <p>3. Начните общение!</p>
+                </div>
+            `;
+        }
+
+        // Загрузка сообщений чата
+        async function loadChatMessages(chatId) {
+            if (!currentToken) return;
+            
+            try {
+                const response = await fetch(`http://localhost:8080/api/v1/chats/${chatId}/messages`, {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const messages = data.messages || [];
+                    
+                    // Очищаем чат
+                    document.getElementById('chat-messages').innerHTML = '';
+                    
+                    // Показываем сообщения
+                    messages.reverse().forEach(message => {
+                        const isOwn = message.user_id === currentUserID;
+                        addMessage(message, isOwn);
+                    });
+                }
+            } catch (error) {
+                console.log('Error loading chat messages:', error);
+            }
+        }
+
+        // Обновление статуса очереди
+        async function updateQueueStatus() {
+            if (!currentToken) return;
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/swirl/status', {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('queue-size').textContent = data.queue_size;
+                }
+            } catch (error) {
+                console.log('Error updating queue status:', error);
+            }
+        }
+
+        // Обновление активности в очереди
+        async function updateSearchActivity() {
+            if (!currentToken) return;
+            
+            try {
+                await fetch('http://localhost:8080/api/v1/swirl/activity', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+            } catch (error) {
+                console.log('Error updating activity:', error);
+            }
+        }
+
+        // Получение статуса очереди
+        async function getQueueStatus() {
+            if (!currentToken) return;
+
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/swirl/status', {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('search-status').textContent = `В очереди: ${data.queue_size} человек`;
+                }
+            } catch (error) {
+                console.log('Ошибка получения статуса очереди:', error);
+            }
+        }
+
+        // Показать профиль
+        function showProfile() {
+            document.getElementById('search-section').style.display = 'none';
+            document.getElementById('profile-section').style.display = 'block';
+            loadProfile();
+        }
+
+        // Загрузить профиль
+        async function loadProfile() {
+            if (!currentToken) return;
+
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/profile', {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                
+                if (response.ok) {
+                    const user = await response.json();
+                    
+                    // Заполняем поля профиля
+                    document.getElementById('profile-username').textContent = user.username || 'Не указано';
+                    document.getElementById('profile-birthday').textContent = user.birthday ? new Date(user.birthday).toLocaleDateString() : 'Не указано';
+                    document.getElementById('profile-status').textContent = user.is_online ? 'В сети' : 'Не в сети';
+                    
+                    // Фото профиля
+                    if (user.profile_photo) {
+                        document.getElementById('profile-photo').src = user.profile_photo;
+                    }
+                    
+                    // Настройки конфиденциальности
+                    document.getElementById('show-username').checked = user.show_username;
+                    document.getElementById('show-birthday').checked = user.show_birthday;
+                    document.getElementById('show-online-status').checked = user.show_online_status;
+                }
+            } catch (error) {
+                console.log('Ошибка загрузки профиля:', error);
+            }
+        }
+
+        // Сохранить профиль
+        async function saveProfile() {
+            if (!currentToken) return;
+
+            const profileData = {
+                show_username: document.getElementById('show-username').checked,
+                show_birthday: document.getElementById('show-birthday').checked,
+                show_online_status: document.getElementById('show-online-status').checked
+            };
+
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/profile', {
+                    method: 'PUT',
+                    headers: { 
+                        'Authorization': 'Bearer ' + currentToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(profileData)
+                });
+                
+                if (response.ok) {
+                    showSearchMessage('Профиль сохранен!', 'success');
+                } else {
+                    showSearchMessage('Ошибка сохранения профиля', 'error');
+                }
+            } catch (error) {
+                showSearchMessage('Ошибка сохранения профиля', 'error');
+            }
+        }
+
+        // Обновить статус онлайн
+        async function updateOnlineStatus(isOnline) {
+            if (!currentToken) return;
+
+            try {
+                await fetch('http://localhost:8080/api/v1/profile/online', {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': 'Bearer ' + currentToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ is_online: isOnline })
+                });
+            } catch (error) {
+                console.log('Ошибка обновления статуса:', error);
+            }
+        }
+
+        // Запуск периодического обновления активности
+        function startActivityUpdates() {
+            if (activityInterval) {
+                clearInterval(activityInterval);
+            }
+            
+            activityInterval = setInterval(() => {
+                updateSearchActivity();
+                updateQueueStatus();
+                checkForNewChat(); // Проверяем, не нашли ли нас
+            }, 5000); // Обновляем каждые 5 секунд
+        }
+
+        // Проверка, не нашли ли нас в чат
+        async function checkForNewChat() {
+            if (!currentToken || currentChatId) {
+                return; // Уже в чате или не авторизован
+            }
+
+            console.log('Checking for new chat...');
+
+            try {
+                // Проверяем, есть ли у нас активные чаты
+                const response = await fetch('http://localhost:8080/api/v1/chats', {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const chats = data.chats || [];
+                    console.log('Found chats:', chats);
+                    
+                    // Ищем чат чатрулетки (более гибкий поиск)
+                    const swirlChat = chats.find(chat => 
+                        chat.type === 'private' && 
+                        (chat.name === 'Chatroulette Chat' || chat.name.includes('Chatroulette')) &&
+                        chat.participants && chat.participants.length >= 2
+                    );
+                    
+                    if (swirlChat) {
+                        console.log('Found swirl chat:', swirlChat);
+                        currentChatId = swirlChat.id;
+                        showSearchMessage('✅ Вас нашли! Начинаем общение', 'success');
+                        document.getElementById('chat-status').textContent = 'Общение началось';
+                        document.getElementById('find-btn').style.display = 'none';
+                        document.getElementById('skip-btn').style.display = 'inline-block';
+                        document.getElementById('save-btn').style.display = 'inline-block';
+                        document.getElementById('check-btn').style.display = 'none';
+                        document.getElementById('message-input').disabled = false;
+                        document.getElementById('send-btn').disabled = false;
+                        document.getElementById('search-status').textContent = 'В чате';
+                        stopActivityUpdates();
+                        connectWebSocket();
+                    } else {
+                        console.log('No swirl chat found yet');
+                    }
+                } else {
+                    console.log('Failed to fetch chats:', response.status);
+                }
+            } catch (error) {
+                console.log('Error checking for new chat:', error);
+            }
+        }
+
+        // Остановка обновления активности
+        function stopActivityUpdates() {
+            if (activityInterval) {
+                clearInterval(activityInterval);
+                activityInterval = null;
+            }
+        }
+
+        // Поиск собеседника
+        async function findRandomUser() {
+            if (!currentToken) {
+                showSearchMessage('Сначала войдите в систему!', 'error');
+                return;
+            }
+
+            // Проверяем, не идет ли уже поиск
+            if (document.getElementById('find-btn').disabled) {
+                showSearchMessage('Поиск уже идет, подождите...', 'warning');
+                return;
+            }
+
+            showSearchMessage('🔍 Ищем собеседника...', 'info');
+            document.getElementById('search-animation').style.display = 'block';
+            document.getElementById('find-btn').disabled = true;
+            document.getElementById('search-status').textContent = 'Ищет собеседника...';
+
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/swirl/find', {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentChatId = data.chat_id;
+                    showSearchMessage('✅ Найден собеседник: ' + data.username, 'success');
+                    document.getElementById('chat-status').textContent = 'Общение с ' + data.username;
+                    document.getElementById('find-btn').style.display = 'none';
+                    document.getElementById('skip-btn').style.display = 'inline-block';
+                    document.getElementById('save-btn').style.display = 'inline-block';
+                    document.getElementById('message-input').disabled = false;
+                    document.getElementById('send-btn').disabled = false;
+                    document.getElementById('search-status').textContent = 'В чате';
+                    stopActivityUpdates(); // Останавливаем обновление активности
+                    connectWebSocket();
+                } else {
+                    const errorData = await response.json();
+                    if (response.status === 404) {
+                        showSearchMessage('⏳ Нет доступных собеседников. Ожидаем...', 'info');
+                        document.getElementById('search-status').textContent = 'В очереди';
+                        document.getElementById('check-btn').style.display = 'inline-block';
+                        startActivityUpdates(); // Запускаем обновление активности
+                    } else {
+                        showSearchMessage('❌ ' + (errorData.error || 'Ошибка поиска'), 'error');
+                        document.getElementById('search-status').textContent = 'Ошибка';
+                    }
+                }
+            } catch (error) {
+                showSearchMessage('❌ Ошибка сети: ' + error.message, 'error');
+                document.getElementById('search-status').textContent = 'Ошибка';
+            } finally {
+                document.getElementById('search-animation').style.display = 'none';
+                document.getElementById('find-btn').disabled = false;
+            }
+        }
+
+        function showSearchMessage(message, type) {
+            const messagesDiv = document.getElementById('search-messages');
+            messagesDiv.innerHTML = '<div class="' + type + '">' + message + '</div>';
+        }
+
+        // WebSocket подключение
+        function connectWebSocket() {
+            if (!currentToken || !currentChatId) {
+                return;
+            }
+
+            // Закрываем предыдущее соединение если есть
+            if (ws) {
+                ws.close();
+            }
+
+            const wsUrl = `ws://localhost:8080/api/v1/ws?chat_id=${currentChatId}&token=${currentToken}`;
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function() {
+                console.log('WebSocket connected');
+                isConnected = true;
+                document.getElementById('connection-status').textContent = 'Подключен';
+                addSystemMessage('🔗 Подключен к чату');
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                console.log('WebSocket message:', data);
+                
+                if (data.type === 'new_message') {
+                    // Проверяем, не наше ли это сообщение
+                    const isOwnMessage = data.payload.user_id === currentUserID;
+                    addMessage(data.payload, isOwnMessage);
+                } else if (data.type === 'message_deleted') {
+                    // Обработка удаленных сообщений
+                }
+            };
+            
+            ws.onclose = function() {
+                console.log('WebSocket disconnected');
+                isConnected = false;
+                document.getElementById('connection-status').textContent = 'Отключен';
+                addSystemMessage('❌ Соединение потеряно');
+            };
+            
+            ws.onerror = function(error) {
+                console.log('WebSocket error:', error);
+                addSystemMessage('❌ Ошибка соединения');
+            };
+        }
+
+        // Отправка сообщений
+        async function sendMessage() {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+            
+            if (!message || !currentChatId || !currentToken) {
+                return;
+            }
+
+            // Очищаем поле ввода сразу
+            messageInput.value = '';
+
+            try {
+                const response = await fetch(`http://localhost:8080/api/v1/chats/${currentChatId}/messages`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentToken
+                    },
+                    body: JSON.stringify({ 
+                        type: 'text',
+                        content: message
+                    })
+                });
+                
+                if (response.ok) {
+                    // НЕ добавляем сообщение здесь - оно придет через WebSocket
+                    console.log('Message sent successfully');
+                } else {
+                    addSystemMessage('❌ Ошибка отправки сообщения');
+                    // Возвращаем текст в поле если ошибка
+                    messageInput.value = message;
+                }
+            } catch (error) {
+                addSystemMessage('❌ Ошибка сети: ' + error.message);
+                // Возвращаем текст в поле если ошибка
+                messageInput.value = message;
+            }
+        }
+
+        function addMessage(messageData, isOwn) {
+            const messagesDiv = document.getElementById('chat-messages');
+            
+            // Убираем системные сообщения если есть
+            const systemMessages = messagesDiv.querySelectorAll('.status-message');
+            systemMessages.forEach(msg => msg.remove());
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + (isOwn ? 'own' : 'other');
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = messageData.content;
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'message-info';
+            infoDiv.textContent = new Date(messageData.created_at).toLocaleTimeString();
+            
+            messageDiv.appendChild(contentDiv);
+            messageDiv.appendChild(infoDiv);
+            messagesDiv.appendChild(messageDiv);
+            
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addSystemMessage(message) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'status-message';
+            messageDiv.textContent = message;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Пропуск пользователя
+        async function skipUser() {
+            if (!currentChatId || !currentToken) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:8080/api/v1/swirl/${currentChatId}/skip`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                
+                if (response.ok) {
+                    addSystemMessage('👋 Пользователь пропущен');
+                    resetChat();
+                }
+            } catch (error) {
+                addSystemMessage('❌ Ошибка пропуска пользователя');
+            }
+        }
+
+        // Сохранение чата
+        async function saveChat() {
+            if (!currentChatId || !currentToken) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:8080/api/v1/swirl/${currentChatId}/save`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                
+                if (response.ok) {
+                    addSystemMessage('💾 Чат сохранен в личные чаты!');
+                    // Обновляем список личных чатов
+                    loadPersonalChats();
+                } else if (response.status === 409) {
+                    addSystemMessage('⚠️ У вас уже есть сохраненный чат с этим пользователем');
+                } else {
+                    addSystemMessage('❌ Ошибка сохранения чата');
+                }
+            } catch (error) {
+                addSystemMessage('❌ Ошибка сохранения чата');
+            }
+        }
+
+        function resetChat() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            
+            currentChatId = '';
+            isConnected = false;
+            stopActivityUpdates(); // Останавливаем обновление активности
+            
+            document.getElementById('find-btn').style.display = 'inline-block';
+            document.getElementById('skip-btn').style.display = 'none';
+            document.getElementById('save-btn').style.display = 'none';
+            document.getElementById('check-btn').style.display = 'none';
+            document.getElementById('back-btn').style.display = 'none';
+            document.getElementById('message-input').disabled = true;
+            document.getElementById('send-btn').disabled = true;
+            document.getElementById('chat-status').textContent = 'Готов к поиску собеседника';
+            document.getElementById('connection-status').textContent = 'Отключен';
+            document.getElementById('search-status').textContent = 'Не ищет';
+            updateQueueStatus(); // Обновляем статус очереди
+        }
+
+        // Обработка Enter для отправки сообщений
+        document.getElementById('message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Инициализация
+        document.getElementById('message-input').disabled = true;
+        document.getElementById('send-btn').disabled = true;
+    </script>
+</body>
+</html>
